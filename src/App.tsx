@@ -17,6 +17,11 @@ client.config.configureEditorPanel([
     type: "dropdown",
     values: ["400px", "500px", "600px", "700px", "800px"],
   },
+  {
+    name: "minCardWidth",
+    type: "dropdown",
+    values: ["300px", "400px", "500px", "600px", "700px", "800px"],
+  },
 ]);
 
 function App() {
@@ -25,7 +30,7 @@ function App() {
   const columnInfo = useElementColumns(config.source);
   const title = (client.config.getKey as any)("Title") as string;
   const cardHeight = (client.config.getKey as any)("Card Height") as string;
-
+  const minCardWidth = (client.config.getKey as any)("minCardWidth") as string;
   // arrays of the ids corresponding to the "dimension" and "measures" data columns from the editor panel
   const { columns } = config;
 
@@ -77,7 +82,7 @@ function App() {
     });
   }, [sigmaData, columnInfo, columns]); // Re-run when any of these dependencies change
 
-  console.log(JSON.stringify(tableData, null, 2));
+//  console.log(JSON.stringify(tableData, null, 2));
 
   /* sample data format
   const tableData = [
@@ -87,7 +92,12 @@ function App() {
   ];
 */
   return tableData ? (
-    <Component data={tableData} title={title} cardHeight={cardHeight} />
+    <Component
+      data={tableData}
+      title={title}
+      cardHeight={cardHeight}
+      minCardWidth={minCardWidth}
+    />
   ) : null;
 }
 
