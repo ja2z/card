@@ -80,12 +80,13 @@ const TruncatedText = ({ text }: { text: string | number }) => {
 };
 
 export default function Component({
-  title,
+  title = "xx",
   data = [],
   minCardWidth = "200px",
 }: ComponentProps) {
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState("100vh");
 
   const testMode: boolean = false;
@@ -105,8 +106,13 @@ export default function Component({
         const rect = containerRef.current.getBoundingClientRect();
         const topOffset = rect.top;
         const viewportHeight = window.innerHeight;
-        const padding = 32; // 2rem for some bottom padding
-        const newHeight = viewportHeight - topOffset - padding;
+        // Increased padding further to eliminate remaining scroll
+        const padding = 48; // Increased from 40 to 48
+        
+        const titleHeight = titleRef.current?.offsetHeight || 0;
+        const cardBorderHeight = 2;
+        
+        const newHeight = viewportHeight - topOffset - padding - titleHeight - cardBorderHeight;
         setContainerHeight(`${newHeight}px`);
       }
     };
@@ -114,10 +120,13 @@ export default function Component({
     calculateHeight();
     window.addEventListener('resize', calculateHeight);
     
+    const timeout = setTimeout(calculateHeight, 100);
+    
     return () => {
       window.removeEventListener('resize', calculateHeight);
+      clearTimeout(timeout);
     };
-  }, []);
+  }, [title]);
 
   if (displayData.length === 0) {
     return <p>No data available.</p>;
@@ -129,7 +138,7 @@ export default function Component({
     <div className="w-full h-full" ref={containerRef}>
       <div style={{ minWidth: minCardWidth }} className="relative px-6 h-full">
         {title && (
-          <div className="sticky top-0 bg-background z-10 pb-4">
+          <div ref={titleRef} className="sticky top-0 bg-background z-10 pb-4">
             <h2 className="text-2xl font-bold">{title}</h2>
             <p className="text-sm text-muted-foreground">
               Showing {displayData.length} rows
