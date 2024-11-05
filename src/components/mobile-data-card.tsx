@@ -1,18 +1,19 @@
-'use client'
+import React, { useState, useRef, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-import React, { useState, useRef, useEffect } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
-type DataRow = Record<string, string | number>
+type DataRow = Record<string, string | number>;
 
 interface ComponentProps {
   title?: string;
   data?: DataRow[];
-  cardHeight?: string;
-  cardWidth?: string;
   minCardWidth?: string;
 }
 
@@ -24,7 +25,9 @@ const TruncatedText = ({ text }: { text: string | number }) => {
   useEffect(() => {
     const checkTruncation = () => {
       if (textRef.current) {
-        setIsTruncated(textRef.current.scrollWidth > textRef.current.clientWidth);
+        setIsTruncated(
+          textRef.current.scrollWidth > textRef.current.clientWidth
+        );
       }
     };
 
@@ -35,11 +38,11 @@ const TruncatedText = ({ text }: { text: string | number }) => {
       resizeObserver.observe(textRef.current.parentElement as Element);
     }
 
-    window.addEventListener('resize', checkTruncation);
+    window.addEventListener("resize", checkTruncation);
 
     return () => {
       resizeObserver.disconnect();
-      window.removeEventListener('resize', checkTruncation);
+      window.removeEventListener("resize", checkTruncation);
     };
   }, [text]);
 
@@ -52,7 +55,7 @@ const TruncatedText = ({ text }: { text: string | number }) => {
     <TooltipProvider delayDuration={300}>
       <Tooltip open={isTruncated && (isLongPressed || undefined)}>
         <TooltipTrigger asChild>
-          <span 
+          <span
             ref={textRef}
             className="truncate block w-full"
             onMouseDown={() => {
@@ -61,7 +64,9 @@ const TruncatedText = ({ text }: { text: string | number }) => {
               }
             }}
             onMouseUp={() => clearTimeout(handleLongPress as unknown as number)}
-            onMouseLeave={() => clearTimeout(handleLongPress as unknown as number)}
+            onMouseLeave={() =>
+              clearTimeout(handleLongPress as unknown as number)
+            }
           >
             {text}
           </span>
@@ -74,42 +79,45 @@ const TruncatedText = ({ text }: { text: string | number }) => {
   );
 };
 
-export default function Component({ 
-  title, 
-  data, 
-  cardHeight = '400px', 
-  cardWidth = '100%', 
-  minCardWidth = '300px' 
+export default function Component({
+  title,
+  data = [],
+  minCardWidth = "200px",
 }: ComponentProps) {
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState("100vh");
+
+  const testMode: boolean = false;
+
+  const defaultData: DataRow[] = [
+    { name: "Bob", age: 40, state: "A very long state name could be here. It is very possible. Some states have really long names that can make the window very wide.", amount: 10 },
+    { name: "Joe", age: 30, state: "CA", amount: 20 },
+    { name: "Alice", age: 35, state: "NY", amount: 15 },
+    { name: "Emma", age: 28, state: "TX", amount: 25 },
+  ];
+
+  const displayData = testMode ? defaultData : data;
 
   useEffect(() => {
-    const updateWidth = () => {
+    const calculateHeight = () => {
       if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
+        const rect = containerRef.current.getBoundingClientRect();
+        const topOffset = rect.top;
+        const viewportHeight = window.innerHeight;
+        const padding = 32; // 2rem for some bottom padding
+        const newHeight = viewportHeight - topOffset - padding;
+        setContainerHeight(`${newHeight}px`);
       }
     };
 
-    updateWidth();
-    const resizeObserver = new ResizeObserver(updateWidth);
+    calculateHeight();
+    window.addEventListener('resize', calculateHeight);
     
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => resizeObserver.disconnect();
+    return () => {
+      window.removeEventListener('resize', calculateHeight);
+    };
   }, []);
-
-  const defaultData: DataRow[] = [
-    { name: 'Bob', age: 40, state: 'PA', amount: 10 },
-    { name: 'Joe', age: 30, state: 'CA', amount: 20 },
-    { name: 'Alice', age: 35, state: 'NY', amount: 15 },
-    { name: 'Emma', age: 28, state: 'TX', amount: 25 },
-  ];
-
-  const displayData = data || defaultData;
 
   if (displayData.length === 0) {
     return <p>No data available.</p>;
@@ -117,55 +125,45 @@ export default function Component({
 
   const headers = Object.keys(displayData[0]);
 
-  // Calculate actual card width based on container width and constraints
-  const actualCardWidth = Math.max(
-    parseInt(minCardWidth) || 400,
-    Math.min(containerWidth, parseInt(cardWidth) || containerWidth)
-  );
-
   return (
-    <div 
-      ref={containerRef}
-      className="w-full flex justify-center"
-    >
-      <div 
-        style={{ 
-          width: actualCardWidth,
-          overflow: 'hidden'
-        }}
-        className="relative"
-      >
+    <div className="w-full h-full" ref={containerRef}>
+      <div style={{ minWidth: minCardWidth }} className="relative px-6 h-full">
         {title && (
           <div className="sticky top-0 bg-background z-10 pb-4">
             <h2 className="text-2xl font-bold">{title}</h2>
-            <p className="text-sm text-muted-foreground">Showing {displayData.length} rows</p>
+            <p className="text-sm text-muted-foreground">
+              Showing {displayData.length} rows
+            </p>
           </div>
         )}
-        <Card className={title ? 'mt-4' : ''}>
-          <CardContent className="p-0">
-            <ScrollArea style={{ height: cardHeight }} className="w-full">
+        <Card className={`${title ? "mt-4" : ""} h-full`}>
+          <CardContent className="p-0 h-full">
+            <ScrollArea style={{ height: containerHeight }}>
               {displayData.map((row, rowIndex) => (
                 <React.Fragment key={rowIndex}>
                   <div
                     className={`p-4 transition-colors duration-200 ${
-                      hoveredIndex === rowIndex 
-                        ? 'bg-blue-100 dark:bg-blue-900' 
-                        : rowIndex % 2 === 0 
-                          ? 'bg-gray-100 dark:bg-gray-800' 
-                          : 'bg-white dark:bg-gray-900'
+                      hoveredIndex === rowIndex
+                        ? "bg-blue-100 dark:bg-blue-900"
+                        : rowIndex % 2 === 0
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-900"
                     }`}
                     onMouseEnter={() => setHoveredIndex(rowIndex)}
                     onMouseLeave={() => setHoveredIndex(null)}
                   >
                     {headers.map((header, index) => (
-                      <div key={index} className="flex items-center space-x-4 py-1 pr-4">
-                        <div className="w-2/5 flex-shrink-0">
-                          <span className="font-medium text-muted-foreground capitalize text-left">
-                            <TruncatedText text={`${header}:`} />
+                      <div
+                        key={index}
+                        className="grid grid-cols-5 gap-4 py-1 px-4"
+                      >
+                        <div className="col-span-2 text-left">
+                          <span className="text-base font-medium text-muted-foreground capitalize">
+                            {`${header}:`}
                           </span>
                         </div>
-                        <div className="w-3/5 flex-shrink-0">
-                          <span className="text-right block">
+                        <div className="col-span-3 max-w-full overflow-hidden">
+                          <span className="text-base block text-right">
                             <TruncatedText text={row[header]} />
                           </span>
                         </div>
