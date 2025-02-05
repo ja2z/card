@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import Component from "./components/mobile-data-card";
 import "./App.css";
 import {
@@ -18,6 +18,12 @@ client.config.configureEditorPanel([
     name: "minCardWidth",
     type: "dropdown",
     values: ["300px", "400px", "500px", "600px", "700px", "800px"],
+  },
+  {
+    name: "containerPadding",
+    type: "dropdown",
+    values: ["0rem", "1rem", "2rem", "3rem"],
+    defaultValue: "2rem"
   },
 ]);
 
@@ -39,6 +45,15 @@ function App() {
   const minCardWidth = (client.config.getKey as any)("minCardWidth") as string;
   const showHeader = (client.config.getKey as any)("Show Header") as boolean;
   const { columns } = config;
+  const containerPadding = (client.config.getKey as any)("containerPadding") as string;
+
+  // Add this useEffect to dynamically update the root padding
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (root) {
+      root.style.padding = containerPadding;
+    }
+  }, [containerPadding]);
 
   // Define type for our output row object
   interface TableRow {
