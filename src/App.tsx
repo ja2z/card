@@ -12,6 +12,7 @@ client.config.configureEditorPanel([
   { name: "source", type: "element" },
   { name: "columns", type: "column", source: "source", allowMultiple: true },
   { name: "Title", type: "text", defaultValue: "Untitled" },
+  { name: "Show Header", type: "checkbox" },
   {
     name: "minCardWidth",
     type: "dropdown",
@@ -25,6 +26,7 @@ function App() {
   const columnInfo = useElementColumns(config.source);
   const title = (client.config.getKey as any)("Title") as string;
   const minCardWidth = (client.config.getKey as any)("minCardWidth") as string;
+  const showHeader = (client.config.getKey as any)("Show Header") as boolean;
   // arrays of the ids corresponding to the "dimension" and "measures" data columns from the editor panel
   const { columns } = config;
 
@@ -90,6 +92,7 @@ function App() {
       data={tableData}
       title={title}
       minCardWidth={minCardWidth}
+      showHeader={showHeader}
     />
   ) : null;
 }

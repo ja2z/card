@@ -15,6 +15,7 @@ interface ComponentProps {
   title?: string;
   data?: DataRow[];
   minCardWidth?: string;
+  showHeader?: boolean;
 }
 
 // TruncatedText component remains unchanged as it works well
@@ -84,6 +85,7 @@ export default function Component({
   title = "No title",
   data = [],
   minCardWidth = "200px",
+  showHeader = true,
 }: ComponentProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -141,16 +143,18 @@ export default function Component({
     >
       {/* Content wrapper with min-width constraint */}
       <div style={{ minWidth: minCardWidth }} className="h-full">
-        {/* Fixed header section */}
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold">{title}</h2>
-          <p className="text-sm text-muted-foreground">
-            Showing {displayData.length} rows
-          </p>
-        </div>
+        {/* Only render header if showHeader is true */}
+        {showHeader && (
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold">{title}</h2>
+            <p className="text-sm text-muted-foreground">
+              Showing {displayData.length} rows
+            </p>
+          </div>
+        )}
         
-        {/* Card with remaining height */}
-        <Card className="h-[calc(100%-4rem)]"> {/* Subtract header height */}
+        {/* Adjust card height based on whether header is shown */}
+        <Card className={`${showHeader ? 'h-[calc(100%-4rem)]' : 'h-full'}`}>
           <CardContent className="p-0 h-full">
             <ScrollArea className="h-full">
               {displayData.map((row, rowIndex) => (
