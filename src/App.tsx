@@ -7,6 +7,7 @@ import {
   useElementData,
   useElementColumns,
 } from "@sigmacomputing/plugin";
+import * as d3 from "d3";
 
 client.config.configureEditorPanel([
   { name: "source", type: "element" },
@@ -20,14 +21,23 @@ client.config.configureEditorPanel([
   },
 ]);
 
+// Add this interface to extend the WorkbookElementColumn type
+interface ExtendedColumnInfo extends Record<string, any> {
+  name: string;
+  columnType: string;
+  format?: {
+    format: string;
+  };
+}
+
 function App() {
   const config = useConfig();
   const sigmaData = useElementData(config.source);
-  const columnInfo = useElementColumns(config.source);
+  // Cast columnInfo to use our extended type
+  const columnInfo = useElementColumns(config.source) as Record<string, ExtendedColumnInfo>;
   const title = (client.config.getKey as any)("Title") as string;
   const minCardWidth = (client.config.getKey as any)("minCardWidth") as string;
   const showHeader = (client.config.getKey as any)("Show Header") as boolean;
-  // arrays of the ids corresponding to the "dimension" and "measures" data columns from the editor panel
   const { columns } = config;
 
   // Define type for our output row object
@@ -66,7 +76,18 @@ function App() {
           const friendlyName = columnInfo[columnId].name;
 
           // Get the actual data value for this row and column
-          const value = sigmaData[columnId][rowIndex];
+          let value = sigmaData[columnId][rowIndex];
+
+          // Apply number formatting if column is numeric and has a format specified
+          if (columnInfo[columnId].columnType === 'number' && 
+              typeof value === 'number' && 
+              columnInfo[columnId].format?.format) {
+            try {
+              value = d3.format(columnInfo[columnId].format.format)(value);
+            } catch (e) {
+              console.warn(`Failed to apply format ${columnInfo[columnId].format.format} to value ${value}`);
+            }
+          }
 
           // Add the value to our row object using the friendly name as the key
           rowObj[friendlyName] = value;
@@ -76,7 +97,7 @@ function App() {
       // Return the completed row object
       return rowObj;
     });
-  }, [sigmaData, columnInfo, columns]); // Re-run when any of these dependencies change
+  }, [sigmaData, columnInfo, columns]); // Removed numberFormatsArray from dependencies
 
 //  console.log(JSON.stringify(tableData, null, 2));
 
