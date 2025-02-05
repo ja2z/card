@@ -80,7 +80,7 @@ const TruncatedText = ({ text }: { text: string | number }) => {
 };
 
 export default function Component({
-  title = "xx",
+  title = "No title",
   data = [],
   minCardWidth = "200px",
 }: ComponentProps) {
