@@ -17,6 +17,7 @@ interface ComponentProps {
   minCardWidth?: string;
 }
 
+// TruncatedText component remains unchanged as it works well
 const TruncatedText = ({ text }: { text: string | number }) => {
   const [isTruncated, setIsTruncated] = useState(false);
   const [isLongPressed, setIsLongPressed] = useState(false);
@@ -84,11 +85,10 @@ export default function Component({
   data = [],
   minCardWidth = "200px",
 }: ComponentProps) {
-  const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState("100vh");
-
+  const [maxHeight, setMaxHeight] = useState("100%");
+  
   const testMode: boolean = false;
 
   const defaultData: DataRow[] = [
@@ -101,32 +101,30 @@ export default function Component({
   const displayData = testMode ? defaultData : data;
 
   useEffect(() => {
-    const calculateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const topOffset = rect.top;
-        const viewportHeight = window.innerHeight;
-        // Increased padding further to eliminate remaining scroll
-        const padding = 48; // Increased from 40 to 48
-        
-        const titleHeight = titleRef.current?.offsetHeight || 0;
-        const cardBorderHeight = 2;
-        
-        const newHeight = viewportHeight - topOffset - padding - titleHeight - cardBorderHeight;
-        setContainerHeight(`${newHeight}px`);
-      }
+    const updateMaxHeight = () => {
+      if (!containerRef.current) return;
+      
+      // Get the viewport height
+      const vh = window.innerHeight;
+      // Get the container's position from the top of the viewport
+      const containerTop = containerRef.current.getBoundingClientRect().top;
+      // Calculate maximum available height (subtract some padding for safety)
+      const availableHeight = vh - containerTop - 32; // 32px safety padding
+      
+      setMaxHeight(`${availableHeight}px`);
     };
 
-    calculateHeight();
-    window.addEventListener('resize', calculateHeight);
+    updateMaxHeight();
+    window.addEventListener('resize', updateMaxHeight);
     
-    const timeout = setTimeout(calculateHeight, 100);
+    // Run again after a short delay to handle any dynamic content
+    const timeout = setTimeout(updateMaxHeight, 100);
     
     return () => {
-      window.removeEventListener('resize', calculateHeight);
+      window.removeEventListener('resize', updateMaxHeight);
       clearTimeout(timeout);
     };
-  }, [title]);
+  }, []);
 
   if (displayData.length === 0) {
     return <p>No data available.</p>;
@@ -135,19 +133,26 @@ export default function Component({
   const headers = Object.keys(displayData[0]);
 
   return (
-    <div className="w-full h-full" ref={containerRef}>
-      <div style={{ minWidth: minCardWidth }} className="relative px-6 h-full">
-        {title && (
-          <div ref={titleRef} className="sticky top-0 bg-background z-10 pb-4">
-            <h2 className="text-2xl font-bold">{title}</h2>
-            <p className="text-sm text-muted-foreground">
-              Showing {displayData.length} rows
-            </p>
-          </div>
-        )}
-        <Card className={`${title ? "mt-4" : ""} h-full`}>
+    // Main container with overflow hidden to prevent body scroll
+    <div 
+      ref={containerRef} 
+      className="w-full overflow-hidden"
+      style={{ height: maxHeight }}
+    >
+      {/* Content wrapper with min-width constraint */}
+      <div style={{ minWidth: minCardWidth }} className="h-full">
+        {/* Fixed header section */}
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold">{title}</h2>
+          <p className="text-sm text-muted-foreground">
+            Showing {displayData.length} rows
+          </p>
+        </div>
+        
+        {/* Card with remaining height */}
+        <Card className="h-[calc(100%-4rem)]"> {/* Subtract header height */}
           <CardContent className="p-0 h-full">
-            <ScrollArea style={{ height: containerHeight }}>
+            <ScrollArea className="h-full">
               {displayData.map((row, rowIndex) => (
                 <React.Fragment key={rowIndex}>
                   <div
