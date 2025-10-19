@@ -12,9 +12,10 @@ dist
 dist-ssr
 *.local
 
-package-lock.json
-package.json
-yarn.lock
+# Comment out or delete these lines:
+# package-lock.json
+# package.json
+# yarn.lock
 
 # Editor directories and files
 .vscode/*
