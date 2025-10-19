@@ -1,0 +1,15 @@
+Consider these two images of a custom react container I am working on that shows a tabular view of data transposed which is optimized for viewing on a mobile device. The entire container is called a card and it's comprised of sections. Each row of tabular data is represented by a section. Inside a section, there are key/value pairs with the key on the left. E.g. if the original table had 10 rows of data and 4 columns, the card would have 10 sections, each section would have 4 rows (4 key/value pairs).
+
+The react component code I am using is attached as a tsx file.
+
+I need help with the horizontal sizing, responsiveness, and text truncation.
+
+There are two images attached. One image shows the entire width of the card. We'll call this image1. In the other image, the right side of the image is truncated such that some of the values on the right aren't event visible.. We'll call this image2. 
+
+You'll see in the code the component has props for cardWidth and minCardWidth. In the images, cardWidth is 100% and minCardWidth is 400px. 
+The div containing the card in image1 is about 875px wide.
+The div containing the card in image2 is about 650px wide.
+
+Since minCardWidth is 400px, I would expect the card not to be truncated. I would expect as I resize the div to be more narrow (from 875 down to 650), the card would repsonively adjust to be more narrow. The entire card width should be visible at 650px. The text (key/values) should get truncated as necessary. The truncation should dynamically adjust as the width adjusts. For example, in image1, the value for "iPod touch" is truncated at the end as "Latest ..." which is correct. If I shrink the width a little, perhaps it would truncate "Generation" to "Genera...". Shrinking it to 650px should again adjust the truncation. But, the entire card width should still be visible since it hasn't hit 400px, the midCardWidth.
+
+I would like you to fix this code to make this behavior work correctly.
