@@ -18,11 +18,12 @@ interface ComponentProps {
   showHeader?: boolean;
 }
 
-// TruncatedText component remains unchanged as it works well
+// Mobile-friendly TruncatedText component with touch support
 const TruncatedText = ({ text }: { text: string | number }) => {
   const [isTruncated, setIsTruncated] = useState(false);
-  const [isLongPressed, setIsLongPressed] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const textRef = useRef<HTMLSpanElement>(null);
+  const longPressTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const checkTruncation = () => {
@@ -48,27 +49,74 @@ const TruncatedText = ({ text }: { text: string | number }) => {
     };
   }, [text]);
 
-  const handleLongPress = () => {
-    setIsLongPressed(true);
-    setTimeout(() => setIsLongPressed(false), 1000);
+  // Handle long press for mobile
+  const handleTouchStart = () => {
+    if (isTruncated) {
+      longPressTimer.current = window.setTimeout(() => {
+        setShowTooltip(true);
+      }, 500); // 500ms long press
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    // Hide tooltip after a delay
+    setTimeout(() => setShowTooltip(false), 2000);
+  };
+
+  const handleTouchCancel = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  // Handle mouse events for desktop
+  const handleMouseDown = () => {
+    if (isTruncated) {
+      longPressTimer.current = window.setTimeout(() => {
+        setShowTooltip(true);
+      }, 450);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    setTimeout(() => setShowTooltip(false), 1000);
+  };
+
+  const handleMouseLeave = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    setShowTooltip(false);
   };
 
   return (
     <TooltipProvider delayDuration={300}>
-      <Tooltip open={isTruncated && (isLongPressed || undefined)}>
+      <Tooltip open={isTruncated && showTooltip}>
         <TooltipTrigger asChild>
           <span
             ref={textRef}
-            className="truncate block w-full"
-            onMouseDown={() => {
-              if (isTruncated) {
-                setTimeout(handleLongPress, 450);
-              }
+            className="truncate block w-full cursor-pointer select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+            style={{
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none'
             }}
-            onMouseUp={() => clearTimeout(handleLongPress as unknown as number)}
-            onMouseLeave={() =>
-              clearTimeout(handleLongPress as unknown as number)
-            }
           >
             {text}
           </span>
@@ -87,7 +135,7 @@ export default function Component({
   minCardWidth = "200px",
   showHeader = true,
 }: ComponentProps) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState("100%");
   
@@ -106,12 +154,9 @@ export default function Component({
     const updateMaxHeight = () => {
       if (!containerRef.current) return;
       
-      // Get the viewport height
       const vh = window.innerHeight;
-      // Get the container's position from the top of the viewport
       const containerTop = containerRef.current.getBoundingClientRect().top;
-      // Calculate maximum available height (subtract some padding for safety)
-      const availableHeight = vh - containerTop - 32; // 32px safety padding
+      const availableHeight = vh - containerTop - 32;
       
       setMaxHeight(`${availableHeight}px`);
     };
@@ -119,7 +164,6 @@ export default function Component({
     updateMaxHeight();
     window.addEventListener('resize', updateMaxHeight);
     
-    // Run again after a short delay to handle any dynamic content
     const timeout = setTimeout(updateMaxHeight, 100);
     
     return () => {
@@ -134,16 +178,25 @@ export default function Component({
 
   const headers = Object.keys(displayData[0]);
 
+  // Handle both touch and mouse interactions
+  const handleRowActivate = (rowIndex: number) => {
+    setActiveIndex(rowIndex);
+  };
+
+  const handleRowDeactivate = () => {
+    setActiveIndex(null);
+  };
+
   return (
-    // Main container with overflow hidden to prevent body scroll
     <div 
       ref={containerRef} 
       className="w-full overflow-hidden"
-      style={{ height: maxHeight }}
+      style={{ 
+        height: maxHeight,
+        WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
+      }}
     >
-      {/* Content wrapper with min-width constraint */}
       <div style={{ minWidth: minCardWidth }} className="h-full">
-        {/* Only render header if showHeader is true */}
         {showHeader && (
           <div className="mb-4">
             <h2 className="text-2xl font-bold">{title}</h2>
@@ -153,7 +206,6 @@ export default function Component({
           </div>
         )}
         
-        {/* Adjust card height based on whether header is shown */}
         <Card className={`${showHeader ? 'h-[calc(100%-4rem)]' : 'h-full'}`}>
           <CardContent className="p-0 h-full">
             <ScrollArea className="h-full">
@@ -161,14 +213,19 @@ export default function Component({
                 <React.Fragment key={rowIndex}>
                   <div
                     className={`p-4 transition-colors duration-200 ${
-                      hoveredIndex === rowIndex
+                      activeIndex === rowIndex
                         ? "bg-blue-100 dark:bg-blue-900"
                         : rowIndex % 2 === 0
                         ? "bg-gray-100 dark:bg-gray-800"
                         : "bg-white dark:bg-gray-900"
                     }`}
-                    onMouseEnter={() => setHoveredIndex(rowIndex)}
-                    onMouseLeave={() => setHoveredIndex(null)}
+                    onMouseEnter={() => handleRowActivate(rowIndex)}
+                    onMouseLeave={handleRowDeactivate}
+                    onTouchStart={() => handleRowActivate(rowIndex)}
+                    onTouchEnd={handleRowDeactivate}
+                    style={{
+                      WebkitTapHighlightColor: 'transparent' // Remove tap highlight on mobile
+                    }}
                   >
                     {headers.map((header, index) => (
                       <div
