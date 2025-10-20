@@ -35,10 +35,14 @@ interface ExtendedColumnInfo extends Record<string, any> {
   };
 }
 
-// Helper function to detect if a value is likely a Unix timestamp
-const isUnixTimestamp = (value: any): boolean => {
-  if (typeof value !== 'number') return false;
-  
+// Helper function to detect if a column is a date/datetime type based on Sigma metadata
+const isDateTimeColumn = (columnType: string): boolean => {
+  // Check if the column type indicates it's a date or datetime field
+  return columnType === 'datetime' || columnType === 'date';
+};
+
+// Helper function to detect if a numeric value looks like a Unix timestamp
+const looksLikeTimestamp = (value: number): boolean => {
   // Unix timestamps in milliseconds are 13 digits
   // Unix timestamps in seconds are 10 digits
   const valueStr = Math.abs(value).toString();
@@ -66,11 +70,10 @@ const formatTimestamp = (value: number): string => {
       return String(value);
     }
     
-    // Format: "Jan 15, 2024 3:30 PM"
+    // Format: "Jan 15, 3:30 PM"
     const formatter = new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
